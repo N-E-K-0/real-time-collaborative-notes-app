@@ -1,44 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
+import { useNotes } from "../../context/NotesContext";
+import { useEffect } from "react";
 
 export default function Dashboard() {
   const router = useRouter();
   const { accessToken, setAccessToken } = useAuth();
-  const [notes, setNotes] = useState([]);
-  const [error, setError] = useState("");
+  const { notes, error, fetchNotes } = useNotes();
 
   useEffect(() => {
-    async function fetchNotes() {
-      // Use the token from the context instead of localStorage
-      try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notes`,
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            withCredentials: true,
-          }
-        );
-        setNotes(res.data);
-      } catch (err) {
-        setError("Failed to fetch notes");
-      }
-    }
-    if (accessToken) fetchNotes();
-  }, [accessToken]);
+    fetchNotes();
+  }, []);
 
   const handleLogout = async () => {
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`,
-        {},
-        { withCredentials: true }
-      );
-      // Clear the in-memory token
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
       setAccessToken(null);
       router.push("/login");
     } catch (err) {
@@ -51,12 +33,19 @@ export default function Dashboard() {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-gray-800">My Notes</h2>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-          >
-            Logout
-          </button>
+          <div className="flex space-x-4">
+            <Link href="/note/new">
+              <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
+                Create Note
+              </button>
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
         {error && <p className="text-red-500 text-center">{error}</p>}
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

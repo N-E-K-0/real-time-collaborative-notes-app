@@ -76,4 +76,26 @@ router.put("/:id", authMiddleware, async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/notes/:id
+ * Delete a note by its ID.
+ * Protected route: requires valid access token.
+ */
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    const note = await Note.findById(req.params.id);
+    if (!note) return res.status(404).json({ error: "Note not found" });
+
+    // Ensure that the note belongs to the authenticated user.
+    if (note.author.toString() !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    await note.remove();
+    res.json({ message: "Note deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
