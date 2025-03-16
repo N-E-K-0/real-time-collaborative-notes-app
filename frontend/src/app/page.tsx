@@ -1,43 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios from "axios";
 import Link from "next/link";
 
-export default function Dashboard() {
-  const [notes, setNotes] = useState([]);
-
-  useEffect(() => {
-    const fetchNotes = async () => {
-      const token = localStorage.getItem("accessToken");
-      try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notes`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setNotes(res.data);
-      } catch (err) {
-        console.error("Error fetching notes", err);
-      }
-    };
-
-    fetchNotes();
-  }, []);
-
+export default function Home() {
   return (
-    <div className="p-4">
-      <h2 className="text-3xl mb-4">My Notes</h2>
-      <ul>
-        {notes.map((note) => (
-          <li key={note._id} className="mb-2">
-            <Link href={`/note/${note._id}`}>
-              <a className="text-blue-600 underline">{note.title}</a>
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
+      <div className="bg-white rounded-lg shadow-xl p-8 max-w-lg text-center">
+        <h1 className="text-4xl font-bold text-gray-800 mb-4">
+          Welcome to Collaborative Notes
+        </h1>
+        <p className="text-gray-600 mb-8">
+          Create, edit, and collaborate on notes in real time. Join us now!
+        </p>
+        <div className="flex justify-center space-x-4">
+          <Link href="/signup">
+            <button className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+              Signup
+            </button>
+          </Link>
+          <Link href="/login">
+            <button className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
+              Login
+            </button>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
