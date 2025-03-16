@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
   const router = useRouter();
-  const { setAccessToken } = useAuth();
+  const { setAccessToken, setUser } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
 
@@ -25,6 +25,7 @@ export default function Login() {
       );
       // Set the access token in memory
       setAccessToken(res.data.accessToken);
+      setUser(res.data.user);
       router.push("/dashboard");
     } catch (err) {
       setError(err.response?.data.error || "Login failed");

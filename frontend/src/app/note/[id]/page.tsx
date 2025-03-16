@@ -11,16 +11,18 @@ export default function NoteEditor() {
   const { id } = useParams();
   const router = useRouter();
   const { fetchNotes } = useNotes();
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
   const [note, setNote] = useState({ title: "", content: "", history: [] });
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !accessToken) return;
 
     async function fetchNote() {
+      setLoading(true);
       try {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/notes/${id}`,
@@ -30,16 +32,20 @@ export default function NoteEditor() {
           }
         );
         setNote(res.data);
+        setError("");
       } catch (err: any) {
         console.error("Error fetching note", err);
         setError("Failed to fetch note");
+      } finally {
+        setLoading(false);
       }
     }
 
     fetchNote();
 
     // Join the note room for real-time updates
-    socket.emit("joinNote", { noteId: id, user: "TestUser" });
+    // socket.emit("joinNote", { noteId: id, user: "TestUser" });
+    socket.emit("joinNote", { noteId: id, user: user?.name || "Unknown" });
 
     // Listen for real-time note updates
     socket.on("noteUpdated", (data) => {
@@ -69,7 +75,7 @@ export default function NoteEditor() {
       socket.off("userJoined");
       socket.off("userLeft");
     };
-  }, [id, accessToken]);
+  }, [id, accessToken, user]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const updatedTitle = e.target.value;
@@ -124,72 +130,80 @@ export default function NoteEditor() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
-      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-xl p-6">
-        <div className="mb-4">
-          <input
-            type="text"
-            value={note.title}
-            onChange={handleTitleChange}
-            placeholder="Note Title"
-            className="w-full border p-2 rounded-lg text-3xl font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+      {loading ? (
+        <div className="text-center">Loading...</div>
+      ) : (
+        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-xl p-6">
+          {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+          <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-xl p-6">
+            <div className="mb-4">
+              <input
+                type="text"
+                value={note.title}
+                onChange={handleTitleChange}
+                placeholder="Note Title"
+                className="w-full border p-2 rounded-lg text-3xl font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <textarea
+              value={note.content}
+              onChange={handleContentChange}
+              className="w-full h-64 border p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Start writing your note..."
+            />
+            <div className="mt-6 flex justify-between">
+              <button
+                onClick={handleSave}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+              >
+                Save
+              </button>
+              <button
+                onClick={handleDelete}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+              >
+                Delete
+              </button>
+            </div>
+            {saveMessage && (
+              <p className="text-green-500 text-center mt-4">{saveMessage}</p>
+            )}
+            <div className="mt-6">
+              <h4 className="text-xl font-semibold mb-2">Active Users:</h4>
+              {activeUsers.length > 0 ? (
+                <ul className="list-disc pl-5">
+                  {activeUsers.map((u, idx) => (
+                    <li key={idx} className="text-gray-700">
+                      {u}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500">
+                  No other users editing this note.
+                </p>
+              )}
+            </div>
+            <div className="mt-6">
+              <h4 className="text-xl font-semibold mb-2">Revision History:</h4>
+              {note.history && note.history.length > 0 ? (
+                <ul className="space-y-2">
+                  {note.history.map((entry: any, idx: number) => (
+                    <li key={idx} className="text-gray-600">
+                      <span className="font-semibold">
+                        {new Date(entry.updatedAt).toLocaleString()}:
+                      </span>{" "}
+                      {entry.content}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500">No revision history available.</p>
+              )}
+            </div>
+          </div>
         </div>
-        <textarea
-          value={note.content}
-          onChange={handleContentChange}
-          className="w-full h-64 border p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Start writing your note..."
-        />
-        <div className="mt-6 flex justify-between">
-          <button
-            onClick={handleSave}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-          >
-            Save
-          </button>
-          <button
-            onClick={handleDelete}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-          >
-            Delete
-          </button>
-        </div>
-        {saveMessage && (
-          <p className="text-green-500 text-center mt-4">{saveMessage}</p>
-        )}
-        <div className="mt-6">
-          <h4 className="text-xl font-semibold mb-2">Active Users:</h4>
-          {activeUsers.length > 0 ? (
-            <ul className="list-disc pl-5">
-              {activeUsers.map((u, idx) => (
-                <li key={idx} className="text-gray-700">
-                  {u}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">No other users editing this note.</p>
-          )}
-        </div>
-        <div className="mt-6">
-          <h4 className="text-xl font-semibold mb-2">Revision History:</h4>
-          {note.history && note.history.length > 0 ? (
-            <ul className="space-y-2">
-              {note.history.map((entry: any, idx: number) => (
-                <li key={idx} className="text-gray-600">
-                  <span className="font-semibold">
-                    {new Date(entry.updatedAt).toLocaleString()}:
-                  </span>{" "}
-                  {entry.content}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">No revision history available.</p>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

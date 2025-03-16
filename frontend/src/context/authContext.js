@@ -7,6 +7,8 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
+  const [user, setUser] = useState(null);
+  const [refreshAttempted, setRefreshAttempted] = useState(false);
 
   // Attach the access token to outgoing requests
   useEffect(() => {
@@ -19,8 +21,6 @@ export function AuthProvider({ children }) {
       },
       (error) => Promise.reject(error)
     );
-
-    // Eject the interceptor when the component unmounts or accessToken changes
     return () => axios.interceptors.request.eject(requestInterceptor);
   }, [accessToken]);
 
@@ -30,52 +30,67 @@ export function AuthProvider({ children }) {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
-        // Check for 401 error and avoid infinite loops
         if (
           error.response?.status === 401 &&
           !originalRequest._retry &&
-          process.env.NEXT_PUBLIC_BACKEND_URL // Ensure backend URL is set
+          process.env.NEXT_PUBLIC_BACKEND_URL
         ) {
           originalRequest._retry = true;
           try {
-            // Call the refresh token endpoint.
-            // Assumes that your backend is using an HTTP-only cookie to send the refresh token.
             const res = await axios.post(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/refresh`,
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/token`,
               {},
               { withCredentials: true }
             );
-            // Update the in-memory token
             setAccessToken(res.data.accessToken);
-            // Set the new token and retry the original request
             originalRequest.headers[
               "Authorization"
             ] = `Bearer ${res.data.accessToken}`;
             return axios(originalRequest);
           } catch (refreshError) {
-            // Optionally, handle logout or show a message if refresh fails.
             console.error(
               "Refresh token failed. Logging out user.",
               refreshError
             );
-            // You might want to clear the token and redirect to login here.
+            // Optionally clear token or redirect to login
           }
         }
         return Promise.reject(error);
       }
     );
-
     return () => axios.interceptors.response.eject(responseInterceptor);
   }, []);
 
+  // Silently refresh token on mount if not present
+  useEffect(() => {
+    async function silentRefresh() {
+      try {
+        const res = await axios.post(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
+        setAccessToken(res.data.accessToken);
+      } catch (err) {
+        console.error("Silent token refresh failed", err);
+      } finally {
+        setRefreshAttempted(true);
+      }
+    }
+    if (!accessToken && !refreshAttempted) {
+      silentRefresh();
+    }
+  }, [accessToken, refreshAttempted]);
+
   return (
-    <AuthContext.Provider value={{ accessToken, setAccessToken }}>
+    <AuthContext.Provider
+      value={{ accessToken, setAccessToken, user, setUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Custom hook for easier access in your components
 export function useAuth() {
   return useContext(AuthContext);
 }

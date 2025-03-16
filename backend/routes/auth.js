@@ -53,7 +53,13 @@ router.post("/login", async (req, res) => {
       secure: process.env.NODE_ENV === "production",
     });
 
-    res.json({ accessToken });
+    res.json({
+      accessToken,
+      user: {
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
