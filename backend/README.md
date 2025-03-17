@@ -1,11 +1,12 @@
-# Frontend - Collaborative Notes App
+# Backend - Collaborative Notes App
 
-This folder contains the Next.js frontend app for the Collaborative Notes App, built with React and styled with Tailwind CSS.
+This folder contains the backend API for the Collaborative Notes App, built with Express.js, Socket.io, MongoDB, and JWT-based authentication.
 
 ## Prerequisites
 
 - Node.js
 - npm or yarn
+- MongoDB instance
 
 ## Installation & Running
 
@@ -14,11 +15,24 @@ npm install
 npm run dev
 ```
 
+or
+
+```bash
+npm install
+npm start
+```
+
 ## Environment Variables
 
 To run this project, you will need to add the following environment variables to your .env file
 
-`NEXT_PUBLIC_BACKEND_URL`
+`MONGO_URI`
+
+`JWT_SECRET`
+
+`FRONTEND_URL`
+
+`PORT`
 
 ## License
 
