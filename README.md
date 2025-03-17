@@ -6,11 +6,11 @@ This monorepo contains the source code for My Collaborative Notes App, a real-ti
 
 The project is divided into two main parts:
 
-Backend:
-An Express.js API with Socket.io for real-time collaboration, MongoDB for storage, and JWT-based authentication.
+- Backend:
+  An Express.js API with Socket.io for real-time collaboration, MongoDB for storage, and JWT-based authentication.
 
-Frontend:
-A Next.js application styled with Tailwind CSS that communicates with the backend to provide a responsive, real-time user experience.
+- Frontend:
+  A Next.js application styled with Tailwind CSS that communicates with the backend to provide a responsive, real-time user experience.
 
 ## Getting Started
 
