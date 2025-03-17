@@ -1,6 +1,6 @@
-# Frontend - Collaborative Notes App
+# Backend - Collaborative Notes App
 
-This folder contains the Next.js frontend app for the Collaborative Notes App, built with React and styled with Tailwind CSS.
+This folder contains the backend API for the Collaborative Notes App. It is built with Express.js, Socket.io, MongoDB, and JWT-based authentication.
 
 ## Features:
 
